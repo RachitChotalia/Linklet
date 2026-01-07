@@ -26,12 +26,12 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtFilter jwtFilter) throws Exception {
         http
             .csrf(csrf -> csrf.disable())
-            .cors(Customizer.withDefaults()) // Uses the corsConfigurationSource bean below
+            .cors(Customizer.withDefaults()) // Uses the corsConfigurationSource bean defined below
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // Allow pre-flight checks from browser
-                .requestMatchers("/api/auth/**").permitAll() // Public access to Login/Register
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // CRITICAL: Allow pre-flight checks
+                .requestMatchers("/api/auth/**").permitAll() // Public Login/Register
                 .requestMatchers("/api/shorten").permitAll() 
-                .requestMatchers("/{shortCode}").permitAll() // Public access to redirects
+                .requestMatchers("/{shortCode}").permitAll() // Public Redirects
                 .requestMatchers("/api/analytics/**").authenticated()
                 .anyRequest().authenticated()
             )
@@ -41,24 +41,23 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // --- GLOBAL CORS CONFIGURATION ---
+    // --- GLOBAL CORS CONFIGURATION (THE FIX) ---
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         
-        // 1. Allow Localhost (testing) AND Your Vercel Domain (Production)
-        configuration.setAllowedOrigins(List.of(
+        // Use setAllowedOriginPatterns instead of setAllowedOrigins
+        // This fixes the "CORS policy" error by being more robust with subdomains and http/s
+        configuration.setAllowedOriginPatterns(List.of(
             "http://localhost:5173", 
-            "https://linklet-taupe.vercel.app" // <--- CRITICAL FIX: Your actual frontend URL
+            "https://linklet-taupe.vercel.app", 
+            "https://*.vercel.app" // Safety net for any Vercel preview URLs
         ));
         
-        // 2. Allow all standard methods
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(List.of("*")); // Allow all headers (Authorization, Content-Type, etc.)
+        configuration.setAllowCredentials(true); // Essential for many frontend fetch requests
         
-        // 3. Allow headers needed for JSON and Auth
-        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With"));
-        
-        // 4. Register this config for all routes
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
