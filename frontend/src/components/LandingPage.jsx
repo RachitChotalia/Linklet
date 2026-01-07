@@ -44,8 +44,8 @@ export default function LandingPage() {
             {/* BIG TYPE */}
             <div className="overflow-hidden mb-4">
               <motion.h1 variants={itemVar} className="text-[12vw] md:text-[130px] leading-[0.85] font-black font-sans tracking-tighter text-white mix-blend-difference">
-                ROUTING <br/>
-                ENGINE <span className="text-transparent stroke-text" style={{ WebkitTextStroke: '2px #ccff00' }}>V2.</span>
+                CONTROL <br/>
+                THE <span className="text-transparent stroke-text" style={{ WebkitTextStroke: '2px #ccff00' }}>FLOW.</span>
               </motion.h1>
             </div>
 
