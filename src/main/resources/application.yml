@@ -1,0 +1,35 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: url-shortener
+
+  # 1. Database Connection (Postgres)
+  datasource:
+    url: jdbc:postgresql://localhost:5432/shortener_db
+    username: user
+    password: password
+    driver-class-name: org.postgresql.Driver
+
+  # 2. JPA / Hibernate Settings (Auto-creates tables)
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  # 3. Redis Connection
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+  # 4. Kafka Connection
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer

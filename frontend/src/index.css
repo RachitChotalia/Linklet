@@ -1,0 +1,44 @@
+/* 1. Distinctive Typography Imports */
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* THEME: "Digital Brutalism" */
+  --bg-void: #050505;
+  --bg-card: #0f0f0f;
+  --accent-acid: #ccff00; /* Distinctive Acid Green */
+  --text-main: #ededed;
+  --text-muted: #888888;
+  --grid-line: #222222;
+}
+
+@layer base {
+  body {
+    background-color: var(--bg-void);
+    color: var(--text-main);
+    font-family: 'JetBrains Mono', monospace; /* Default to technical font */
+    overflow-x: hidden;
+  }
+  
+  /* Distinctive Headlines */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Syne', sans-serif;
+    letter-spacing: -0.02em;
+  }
+}
+
+/* Custom Noise Grain for Texture */
+.bg-noise {
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
+}
+
+/* Custom Grid Background */
+.bg-grid-pattern {
+  background-size: 50px 50px;
+  background-image: linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+                    linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+  mask-image: radial-gradient(circle at center, black 40%, transparent 100%);
+}
