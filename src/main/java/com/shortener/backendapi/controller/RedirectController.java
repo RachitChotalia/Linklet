@@ -2,9 +2,8 @@ package com.shortener.backendapi.controller;
 
 import com.shortener.backendapi.service.AnalyticsProducer;
 import com.shortener.backendapi.service.UrlService;
-import jakarta.servlet.http.HttpServletRequest; // Needed to get IP address
+import jakarta.servlet.http.HttpServletRequest; 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,7 +18,7 @@ public class RedirectController {
     private UrlService urlService;
 
     @Autowired
-    private AnalyticsProducer analyticsProducer; // Injecting the Kafka Producer
+    private AnalyticsProducer analyticsProducer; 
 
     // GET http://localhost:8081/{shortCode}
     @GetMapping("/{shortCode}")
@@ -32,12 +31,18 @@ public class RedirectController {
             return ResponseEntity.notFound().build();
         }
 
-        // 2. Fire & Forget Analytics Event (Async)
-        // We capture the IP and Browser info (User-Agent) for the dashboard later
-        String ipAddress = request.getRemoteAddr();
-        String userAgent = request.getHeader("User-Agent");
+        // 2. DISABLE KAFKA (TEMPORARY FIX)
+        // We comment this out because there is no Kafka server on Railway yet.
+        // This prevents the 500 Internal Server Error.
         
-        analyticsProducer.sendClickEvent(shortCode, ipAddress, userAgent);
+        /* String ipAddress = request.getRemoteAddr();
+        String userAgent = request.getHeader("User-Agent");
+        try {
+             analyticsProducer.sendClickEvent(shortCode, ipAddress, userAgent);
+        } catch (Exception e) {
+             System.out.println("Analytics failed (Kafka missing), but redirecting anyway.");
+        }
+        */
 
         // 3. Redirect the User (302 Found)
         return ResponseEntity.status(HttpStatus.FOUND)
