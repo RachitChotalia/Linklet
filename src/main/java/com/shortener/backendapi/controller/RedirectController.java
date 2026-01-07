@@ -31,18 +31,16 @@ public class RedirectController {
             return ResponseEntity.notFound().build();
         }
 
-        // 2. DISABLE KAFKA (TEMPORARY FIX)
-        // We comment this out because there is no Kafka server on Railway yet.
-        // This prevents the 500 Internal Server Error.
+       
         
-        /* String ipAddress = request.getRemoteAddr();
+         String ipAddress = request.getRemoteAddr();
         String userAgent = request.getHeader("User-Agent");
         try {
              analyticsProducer.sendClickEvent(shortCode, ipAddress, userAgent);
         } catch (Exception e) {
              System.out.println("Analytics failed (Kafka missing), but redirecting anyway.");
         }
-        */
+        
 
         // 3. Redirect the User (302 Found)
         return ResponseEntity.status(HttpStatus.FOUND)
