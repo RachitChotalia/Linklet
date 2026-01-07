@@ -11,7 +11,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = "http://localhost:5173")
 public class AuthController {
 
     @Autowired private UserRepository userRepository;
@@ -21,13 +20,10 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody User user) {
         if (userRepository.findByUsername(user.getUsername()).isPresent()) {
-            // FIX: Return JSON instead of String
             return ResponseEntity.badRequest().body(Map.of("message", "Username already exists"));
         }
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         userRepository.save(user);
-        
-        // FIX: Return JSON instead of String
         return ResponseEntity.ok(Map.of("message", "User registered successfully"));
     }
 
@@ -40,8 +36,6 @@ public class AuthController {
             String token = jwtUtil.generateToken(user.getUsername());
             return ResponseEntity.ok(Map.of("token", token));
         }
-        
-        // FIX: Return JSON instead of String for errors too
         return ResponseEntity.status(401).body(Map.of("message", "Invalid credentials"));
     }
 }
