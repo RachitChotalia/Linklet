@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, Copy, Check, Zap, LogOut, Activity, X, Server, Hash } from 'lucide-react';
+import { ArrowRight, Copy, Check, Zap, LogOut, Activity, X, Server, Hash, QrCode } from 'lucide-react'; // Added QrCode icon
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { QRCodeCanvas } from 'qrcode.react'; // Added QR Library
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Login from './components/Login';
 import LandingPage from './components/LandingPage';
@@ -33,6 +34,9 @@ function Dashboard() {
   const [selectedShortCode, setSelectedShortCode] = useState(null); 
   const [statsData, setStatsData] = useState([]);
   const [loadingStats, setLoadingStats] = useState(false);
+  
+  // NEW: QR Code Modal State
+  const [showQr, setShowQr] = useState(null);
 
   const fetchHistory = async () => {
     try {
@@ -78,7 +82,6 @@ function Dashboard() {
     }
   };
 
-  // --- UPDATED ANALYTICS FETCHING LOGIC ---
   const fetchAnalytics = async (code) => {
     if (!code) return;
     setSelectedShortCode(code);
@@ -93,28 +96,21 @@ function Dashboard() {
       
       const rawData = await response.json();
 
-      // 1. Handle Empty Data
       if (!rawData || rawData.length === 0) {
         setStatsData([{ time: 'Now', clicks: 0 }]);
       } else {
-        // 2. Process Raw Data: Group clicks by "Hour:Minute"
         const clicksByTime = rawData.reduce((acc, item) => {
-          // Convert timestamp string (e.g. "1767855...") to Date
           const date = new Date(parseInt(item.timestamp));
-          // Format as HH:MM (e.g., "14:30")
           const timeLabel = `${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`;
-          
           acc[timeLabel] = (acc[timeLabel] || 0) + 1;
           return acc;
         }, {});
 
-        // 3. Convert Object to Array for Recharts
         const processedData = Object.keys(clicksByTime).map(time => ({
           time: time,
           clicks: clicksByTime[time]
         }));
         
-        // 4. Sort chronologically so the line doesn't jump
         processedData.sort((a, b) => {
             const [h1, m1] = a.time.split(':').map(Number);
             const [h2, m2] = b.time.split(':').map(Number);
@@ -145,8 +141,6 @@ function Dashboard() {
       
       {/* Navbar */}
       <nav className="relative z-10 w-full px-8 h-20 flex items-center justify-between border-b border-zinc-800 bg-[#050505]/80 backdrop-blur-sm">
-        
-        {/* LOGO LINK TO LANDING */}
         <Link to="/" className="flex items-center gap-4 group cursor-pointer">
           <div className="w-8 h-8 bg-[#ccff00] rounded-sm flex items-center justify-center group-hover:bg-white transition-colors">
             <Zap className="w-5 h-5 text-black" />
@@ -262,6 +256,11 @@ function Dashboard() {
                     </div>
                     
                     <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        {/* NEW QR BUTTON */}
+                        <button onClick={() => setShowQr(link.realUrl)} className="p-2 text-zinc-400 hover:text-[#ccff00] hover:bg-zinc-900 border border-transparent hover:border-zinc-700 transition" title="QR CODE">
+                            <QrCode className="w-3 h-3" />
+                        </button>
+
                         <button onClick={() => fetchAnalytics(link.shortCode)} className="p-2 text-zinc-400 hover:text-[#ccff00] hover:bg-zinc-900 border border-transparent hover:border-zinc-700 transition" title="ANALYZE">
                             <Activity className="w-3 h-3" />
                         </button>
@@ -274,6 +273,51 @@ function Dashboard() {
             </AnimatePresence>
             </div>
         </div>
+
+        {/* --- QR CODE MODAL --- */}
+        <AnimatePresence>
+        {showQr && (
+          <motion.div 
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+            onClick={() => setShowQr(null)} // Close when clicking background
+          >
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }} 
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()} // Prevent closing when clicking content
+            >
+              <TechBorder className="p-8 flex flex-col items-center gap-6 bg-[#050505] max-w-sm">
+                <div className="w-full flex justify-between items-start">
+                     <div>
+                        <h3 className="text-lg font-bold text-white uppercase tracking-widest">Secure Link</h3>
+                        <p className="text-xs text-[#ccff00] font-mono mt-1">SCAN TO CONNECT</p>
+                     </div>
+                     <button onClick={() => setShowQr(null)} className="text-zinc-500 hover:text-white"><X className="w-5 h-5"/></button>
+                </div>
+
+                <div className="p-4 bg-white rounded-sm">
+                    <QRCodeCanvas 
+                        value={showQr} 
+                        size={200}
+                        bgColor={"#ffffff"}
+                        fgColor={"#000000"}
+                        level={"H"} // High error correction
+                    />
+                </div>
+
+                <div className="text-center">
+                    <p className="text-[10px] text-zinc-500 font-mono break-all max-w-[200px]">{showQr}</p>
+                </div>
+              </TechBorder>
+            </motion.div>
+          </motion.div>
+        )}
+        </AnimatePresence>
+
       </main>
     </div>
   );
