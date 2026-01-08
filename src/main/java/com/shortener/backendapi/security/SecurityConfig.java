@@ -32,6 +32,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/shorten").permitAll()
                 .requestMatchers("/{shortCode}").permitAll()
                 .requestMatchers("/api/analytics/**").authenticated()
+                .requestMatchers("/api/analytics/**").permitAll()
                 .anyRequest().authenticated()
             )
             .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
