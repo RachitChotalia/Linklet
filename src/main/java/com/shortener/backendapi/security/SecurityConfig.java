@@ -1,14 +1,13 @@
-package com.shortener.backendapi.config;
+package com.shortener.backendapi.security; 
 
-import com.shortener.backendapi.security.JwtFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder; // <--- NEW IMPORT
-import org.springframework.security.crypto.password.PasswordEncoder;     // <--- NEW IMPORT
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -51,12 +50,10 @@ public class SecurityConfig {
         return config.getAuthenticationManager();
     }
 
-    // --- THIS WAS MISSING ---
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
-    // ------------------------
 
     @Bean
     public UrlBasedCorsConfigurationSource corsConfigurationSource() {
