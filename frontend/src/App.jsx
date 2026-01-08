@@ -78,21 +78,54 @@ function Dashboard() {
     }
   };
 
+  // --- UPDATED ANALYTICS FETCHING LOGIC ---
   const fetchAnalytics = async (code) => {
     if (!code) return;
     setSelectedShortCode(code);
     setLoadingStats(true);
     setShowAnalytics(true);
+    
     try {
       const response = await fetch(`${API_BASE_URL}/api/analytics/${code}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (response.status === 403) throw new Error("Unauthorized");
-      const data = await response.json();
-      setStatsData(data.length === 0 ? [{ time: 'Now', clicks: 0 }] : data);
+      
+      const rawData = await response.json();
+
+      // 1. Handle Empty Data
+      if (!rawData || rawData.length === 0) {
+        setStatsData([{ time: 'Now', clicks: 0 }]);
+      } else {
+        // 2. Process Raw Data: Group clicks by "Hour:Minute"
+        const clicksByTime = rawData.reduce((acc, item) => {
+          // Convert timestamp string (e.g. "1767855...") to Date
+          const date = new Date(parseInt(item.timestamp));
+          // Format as HH:MM (e.g., "14:30")
+          const timeLabel = `${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`;
+          
+          acc[timeLabel] = (acc[timeLabel] || 0) + 1;
+          return acc;
+        }, {});
+
+        // 3. Convert Object to Array for Recharts
+        const processedData = Object.keys(clicksByTime).map(time => ({
+          time: time,
+          clicks: clicksByTime[time]
+        }));
+        
+        // 4. Sort chronologically so the line doesn't jump
+        processedData.sort((a, b) => {
+            const [h1, m1] = a.time.split(':').map(Number);
+            const [h2, m2] = b.time.split(':').map(Number);
+            return (h1 * 60 + m1) - (h2 * 60 + m2);
+        });
+
+        setStatsData(processedData);
+      }
     } catch (e) {
       console.error(e);
-      setStatsData([]);
+      setStatsData([{ time: 'Error', clicks: 0 }]);
     } finally {
       setLoadingStats(false);
     }
