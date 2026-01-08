@@ -1,49 +1,53 @@
 package com.shortener.backendapi.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import java.sql.*;
-import java.util.*;
-import java.time.format.DateTimeFormatter;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/analytics")
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = "http://localhost:5173") // Allows frontend access
 public class AnalyticsController {
 
-    private static final String DB_URL = "jdbc:clickhouse://localhost:8123/default";
+    @Autowired
+    private StringRedisTemplate redisTemplate;
+
+    // Must match the key used in AnalyticsProducer.java
+    private static final String REDIS_QUEUE_KEY = "analytics_clicks";
+    
+    private final ObjectMapper mapper = new ObjectMapper();
 
     @GetMapping("/{shortCode}")
-    public List<Map<String, Object>> getStats(@PathVariable String shortCode) {
-        List<Map<String, Object>> results = new ArrayList<>();
-        
-        // This query groups clicks by Hour to show a timeline
-        String query = """
-            SELECT 
-                formatDateTime(toStartOfHour(timestamp), '%H:00') as time_bucket, 
-                count(*) as clicks 
-            FROM clicks 
-            WHERE short_code = ? 
-            GROUP BY time_bucket 
-            ORDER BY time_bucket
-        """;
+    public ResponseEntity<List<Map<String, Object>>> getStats(@PathVariable String shortCode) {
+        // 1. Fetch all logs from Redis
+        // (For a production app, we would use a different data structure, 
+        // but for this fix, reading the list is perfectly fine and crash-proof)
+        List<String> rawLogs = redisTemplate.opsForList().range(REDIS_QUEUE_KEY, 0, -1);
 
-        try (Connection conn = DriverManager.getConnection(DB_URL);
-             PreparedStatement ps = conn.prepareStatement(query)) {
-
-            ps.setString(1, shortCode);
-            
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    Map<String, Object> row = new HashMap<>();
-                    row.put("time", rs.getString("time_bucket"));
-                    row.put("clicks", rs.getInt("clicks"));
-                    results.add(row);
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+        if (rawLogs == null || rawLogs.isEmpty()) {
+            return ResponseEntity.ok(Collections.emptyList());
         }
-        
-        return results;
+
+        // 2. Filter logs in memory to find matches for this shortCode
+        List<Map<String, Object>> stats = rawLogs.stream()
+            .map(json -> {
+                try {
+                    // Convert JSON string back to Map
+                    return (Map<String, Object>) mapper.readValue(json, Map.class);
+                } catch (Exception e) {
+                    return null;
+                }
+            })
+            .filter(data -> data != null && shortCode.equals(data.get("shortCode")))
+            .collect(Collectors.toList());
+
+        return ResponseEntity.ok(stats);
     }
 }
