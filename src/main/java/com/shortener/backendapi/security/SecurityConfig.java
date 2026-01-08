@@ -7,6 +7,8 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder; // <--- NEW IMPORT
+import org.springframework.security.crypto.password.PasswordEncoder;     // <--- NEW IMPORT
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -30,13 +32,13 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                // --- PUBLIC ROUTES (No Login Required) ---
-                .requestMatchers("/api/auth/**").permitAll()    // Login/Register
-                .requestMatchers("/{shortCode}").permitAll()    // The Short Link itself
-                .requestMatchers("/api/shorten").permitAll()    // Creating links
-                .requestMatchers("/api/analytics/**").permitAll() // <--- ANALYTICS UNLOCKED HERE
+                // --- PUBLIC ROUTES ---
+                .requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers("/{shortCode}").permitAll()
+                .requestMatchers("/api/shorten").permitAll()
+                .requestMatchers("/api/analytics/**").permitAll()
                 
-                // --- PRIVATE ROUTES (Login Required) ---
+                // --- PRIVATE ROUTES ---
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
@@ -48,6 +50,13 @@ public class SecurityConfig {
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
     }
+
+    // --- THIS WAS MISSING ---
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+    // ------------------------
 
     @Bean
     public UrlBasedCorsConfigurationSource corsConfigurationSource() {
